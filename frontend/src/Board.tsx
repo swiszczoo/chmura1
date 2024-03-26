@@ -16,7 +16,7 @@ function BoardTile(props: BoardTileProps) {
     }
 
     const handleClick = () => {
-        socket?.emit('move', [props.x, props.y], () => {});
+        socket?.emit('move', [props.x, props.y], () => { });
     };
 
     return (
@@ -30,7 +30,7 @@ export interface BoardProps {
     nextMove: 'X' | 'O';
     playerNameX: string;
     playerNameO: string;
-    result: 'X' | 'O' | undefined;
+    result: 'X' | 'O' | '-' | undefined;
     playfield: ('X' | 'O' | ' ')[];
     yourShape: 'X' | 'O';
 }
@@ -63,10 +63,20 @@ function Board(props: BoardProps & { onRestart?: () => void }) {
                 <BoardTile x={2} y={2} tile={props.playfield[8]} ourMove={ourMove} />
             </div>
             {
-                props.result !== undefined && 
+                props.result !== undefined &&
                 <>
-                    { props.result === props.yourShape && <p className="text-green-500 text-lg text-center">Wygrałeś!</p> }
-                    { props.result !== props.yourShape && <p className="text-red-500 text-lg text-center">Przegrałeś!</p> }
+                    {
+                        props.result === props.yourShape &&
+                        <p className="text-green-500 text-lg text-center">Wygrałeś!</p>
+                    }
+                    {
+                        props.result !== props.yourShape && props.result === '-' && 
+                        <p className="text-yellow-500 text-lg text-center">Remis!</p>
+                    }
+                    {
+                        props.result !== props.yourShape && props.result !== '-' && 
+                        <p className="text-red-500 text-lg text-center">Przegrałeś!</p>
+                    }
                     <button className="mt-4 w-full" onClick={props.onRestart}>Zagraj ponownie</button>
                 </>
             }

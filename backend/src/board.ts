@@ -4,7 +4,7 @@ interface BoardData {
     nextMove: 'X' | 'O';
     playerNameX: string;
     playerNameO: string;
-    result: 'X' | 'O' | undefined;
+    result: 'X' | 'O' | '-' | undefined;
     playfield: string;
     yourShape: 'X' | 'O';
 }
@@ -14,7 +14,7 @@ export class Board {
     private playerNameX: string;
     private playerNameO: string;
     private board: ('X' | 'O' | ' ')[][];
-    private winner: 'X' | 'O' | undefined;
+    private winner: 'X' | 'O' | '-' | undefined;
 
     private players: WeakRef<Socket>[];
 
@@ -23,9 +23,9 @@ export class Board {
         this.playerNameX = xName;
         this.playerNameO = oName;
         this.board = [
-            [' ',' ',' '],
-            [' ',' ',' '],
-            [' ',' ',' '],
+            [' ', ' ', ' '],
+            [' ', ' ', ' '],
+            [' ', ' ', ' '],
         ];
 
         this.players = players.map(p => new WeakRef(p));
@@ -74,7 +74,7 @@ export class Board {
         this.winner = winner;
     }
 
-    public getWinner(): 'X' | 'O' | undefined {
+    public getWinner(): 'X' | 'O' | '-' | undefined {
         return this.winner;
     }
 
@@ -103,6 +103,19 @@ export class Board {
         }
         if (this.board[2][0] !== ' ' && this.board[2][0] === this.board[1][1] && this.board[1][1] === this.board[0][2]) {
             this.winner = this.board[2][0];
+        }
+
+        if (this.winner === undefined) {
+            let fullBoard = true;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    fullBoard &&= this.board[i][j] !== ' ';
+                }
+            }
+
+            if (fullBoard) {
+                this.winner = '-';
+            }
         }
     }
 }

@@ -1,0 +1,20 @@
+services:
+  backend:
+    build: ./backend
+    container_name: chmura-backend
+    networks:
+      - chmura-net
+    ports:
+      - 3000:3000
+  frontend:
+    build: ./frontend
+    container_name: chmura-frontend
+    networks:
+      - chmura-net
+    ports:
+      - 4173:4173
+    depends_on:
+      - backend
+networks:
+  chmura-net:
+    driver: bridge
