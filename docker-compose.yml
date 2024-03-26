@@ -4,8 +4,6 @@ services:
     container_name: chmura-backend
     networks:
       - chmura-net
-    ports:
-      - 3000:3000
   frontend:
     build: ./frontend
     container_name: chmura-frontend
