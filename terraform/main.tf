@@ -1,41 +1,71 @@
 terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+    required_providers {
+        aws = {
+            source  = "hashicorp/aws"
+            version = "~> 5.0"
+        }
     }
-  }
 }
 
 provider "aws" {
-  region = "us-east-1"
+    region = "us-east-1"
 }
 
-data "aws_vpc" "default" {
-  default = true
+resource "aws_vpc" "ttt_vpc" {
+    cidr_block = "10.0.0.0/16"
+
+    tags = {
+        Name = "TicTacToe VPC"
+    }
+}
+
+resource "aws_subnet" "ttt_subnet_pub" {
+    vpc_id = aws_vpc.ttt_vpc.id
+    cidr_block = "10.0.1.0/24"
+    availability_zone = "us-east-1a"
+
+    tags = {
+        Name = "TicTacToe VPC Public Subnet"
+    }
+}
+
+resource "aws_internet_gateway" "ttt_gateway" {
+    vpc_id = aws_vpc.ttt_vpc.id
+    tags = {
+        Name = "TicTacToe VPC Gateway"
+    }
+}
+
+resource "aws_route_table" "ttt_routing" {
+    vpc_id = aws_vpc.ttt_vpc.id
+    
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = aws_internet_gateway.ttt_gateway.id
+    }
+
+    route {
+        ipv6_cidr_block = "::/0"
+        gateway_id = aws_internet_gateway.ttt_gateway.id
+    }
+
+    tags = {
+        Name = "TicTacToe VPC Routing Table"
+    }
+}
+
+resource "aws_route_table_association" "ttt_routing_assoc" {
+    subnet_id = aws_subnet.ttt_subnet_pub.id
+    route_table_id = aws_route_table.ttt_routing.id
 }
 
 resource "aws_security_group" "ttt_security_group" {
     name_prefix = "ttt_security_group"
-    vpc_id = data.aws_vpc.default.id
+    vpc_id = aws_vpc.ttt_vpc.id
 
     ingress {
         from_port   = 80
         to_port     = 80
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    ingress {
-        from_port   = 22
-        to_port     = 22
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    ingress {
-        from_port   = 443
-        to_port     = 443
         protocol    = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
@@ -73,7 +103,7 @@ resource "aws_instance" "ttt_ec2" {
             "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
             $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
             sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-        sudo apt-get update
+        sudo apt-get -y update
 
         sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
@@ -83,8 +113,11 @@ resource "aws_instance" "ttt_ec2" {
         cd app
         sudo git clone https://github.com/swiszczoo/chmura1.git
         cd chmura1
-        sudo docker compose -f docker-compose-prod.yml -d
+        sudo docker compose -f docker-compose-prod.yml up -d
     EOF
+
+    subnet_id = aws_subnet.ttt_subnet_pub.id
+    associate_public_ip_address = true
 
     vpc_security_group_ids = [
         aws_security_group.ttt_security_group.id,
@@ -96,5 +129,5 @@ resource "aws_instance" "ttt_ec2" {
 }
 
 output "public_ip" {
-  value = aws_instance.ttt_ec2.public_ip
+    value = aws_instance.ttt_ec2.public_ip
 }
