@@ -1,0 +1,20 @@
+services:
+  backend:
+    container_name: chmura-backend
+    image: ghcr.io/swiszczoo/chmura-backend
+    networks:
+      - chmura-net
+    restart: unless-stopped
+  frontend:
+    container_name: chmura-frontend
+    image: ghcr.io/swiszczoo/chmura-frontend
+    networks:
+      - chmura-net
+    ports:
+      - 80:80
+    depends_on:
+      - backend
+    restart: unless-stopped
+networks:
+  chmura-net:
+    driver: bridge
