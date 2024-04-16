@@ -7,10 +7,12 @@ terraform {
     }
 }
 
+# Region, w którym znajduje się lab AWS Academy
 provider "aws" {
     region = "us-east-1"
 }
 
+# Sieć VPC
 resource "aws_vpc" "ttt_vpc" {
     cidr_block = "10.0.0.0/16"
 
@@ -19,6 +21,7 @@ resource "aws_vpc" "ttt_vpc" {
     }
 }
 
+# Jedyna podsieć w sieci VPC o adresie 10.0.1.0/24
 resource "aws_subnet" "ttt_subnet_pub" {
     vpc_id = aws_vpc.ttt_vpc.id
     cidr_block = "10.0.1.0/24"
@@ -29,6 +32,7 @@ resource "aws_subnet" "ttt_subnet_pub" {
     }
 }
 
+# Brama, która wpuszcza ruch z internetu do VPC
 resource "aws_internet_gateway" "ttt_gateway" {
     vpc_id = aws_vpc.ttt_vpc.id
     tags = {
@@ -36,6 +40,7 @@ resource "aws_internet_gateway" "ttt_gateway" {
     }
 }
 
+# Konfiguracja tablicy routowania - wpuszcza cały ruch przychodzący do VPC
 resource "aws_route_table" "ttt_routing" {
     vpc_id = aws_vpc.ttt_vpc.id
     
@@ -54,11 +59,14 @@ resource "aws_route_table" "ttt_routing" {
     }
 }
 
+# Podłączenie tablicy routingu do podsieci, w której będzie się znajdować
+# instancja EC2
 resource "aws_route_table_association" "ttt_routing_assoc" {
     subnet_id = aws_subnet.ttt_subnet_pub.id
     route_table_id = aws_route_table.ttt_routing.id
 }
 
+# Konfiguracja firewalla dla instancji EC2
 resource "aws_security_group" "ttt_security_group" {
     name_prefix = "ttt_security_group"
     vpc_id = aws_vpc.ttt_vpc.id
@@ -78,13 +86,15 @@ resource "aws_security_group" "ttt_security_group" {
     }
 }
 
+# Klucz publiczny do autoryzacji logowania przez SSH
 resource "aws_key_pair" "ttt_kp" {
     key_name = "pc"
     public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4QJZJ+AkijoThPe+disNSVrtuuS7d2W9sq7ih0fU6RM/rkFuavhG4DdXrsGIIQJUKFY5uNSGqTcdum9Ns9EhedXrKq0W8UJkgpjAkGfQBYwj575qsvh/83wWk9SeKEVRFhHxHhotpmNvpPN2F0eB8R0gidKJf46eNQ3BH9/ULHAj9ZH/hoXODWRAh5GPJ/Y14qpiJqP2bVqPgebU5XbZ6s2DiuVqrwSZ5sX1uRyJcKsJs9IcEAsrc4PGUKkLQ7MRZ+cdrM3hwju0Gj/7ulLIBDWhpWk6jvssadtj14eft3NEEbJeX6ss9Ej/8uYMHqHxMe0fcvVe5vuvXAOg0avh5OKDaoRHKxA5I/IEryVo3385jEFPtV0RhYSnJWdiBYUufG3LZnSAV4eAdclB7See25rK5S16BvkiX7nGMCN8h3ZkXW3C04D5FFq9p+PWi9LvCmZd+sS8VwcpL67xFGkId8srMl4hb0e52k3G4Vz4wouCNLpnTEI3z8rM5Xuj0vo0= lukasz@DESK-X570"
 }
 
+# Instancja EC2
 resource "aws_instance" "ttt_ec2" {
-    ami = "ami-0e001c9271cf7f3b9"
+    ami = "ami-0e001c9271cf7f3b9" # Ubuntu 22.04 LTS
     instance_type = "t2.micro"
     key_name = aws_key_pair.ttt_kp.key_name
 
@@ -128,6 +138,7 @@ resource "aws_instance" "ttt_ec2" {
     }
 }
 
+# Na wyjściu chcemy otrzymać publiczny adres IP instancji
 output "public_ip" {
     value = aws_instance.ttt_ec2.public_ip
 }
